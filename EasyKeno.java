@@ -11,7 +11,6 @@ import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
 import java.util.*;
-
   /**
    * Main class that all of the classes use
    * @param No parameters.
@@ -73,12 +72,6 @@ public class EasyKeno extends JFrame {
    private JLabel helpInstructions = new JLabel(s);
    		// shows user the text instructions
    
-   /**
-    * KenoFile exclusive variables
-    */
-   private int wins;	// keeps track of the number of wins
-   private int losses;	// keeps track of the number of losses
-   
    
   /**
    * Main method that sets the main JFrame (window)
@@ -109,23 +102,89 @@ public class EasyKeno extends JFrame {
       confirmSquares.addActionListener(e);
       rules.addActionListener(e);
       exit.addActionListener(e);
+      
+      /* 
+       * Checks if kenoFile is corrupted.  If not corrupted, if the file exists, then
+       * it reads the file to find the total payout from the last game played.  If the
+       * player has $0/hasn't played a game, a new game is made. If the file does not 
+       * exist, a new file is created
+       */
+      try {
+       // declaring temp variables
+         File kenoFile = new File("KenoFile.txt");
+         Scanner sc = new Scanner(kenoFile); //used to count lines in KenoFile
+         Scanner sc2 = new Scanner(kenoFile); //used to go to position two lines before the end (where total is)
+         PrintWriter pw = new PrintWriter(new FileWriter(kenoFile, true));
+         	// makes it so that pw.println() dynamically happens at bottom of txt file
+         int count = 0; //counter to count lines of kenoFile
+         
+         // counts num lines in kenoFile
+         while (sc.hasNextLine()) {
+            sc.nextLine();
+            count++;
+         }
+         //locates total money from txt file and saves it
+         for(int i=0;i<count-2;i++) {
+            sc2.nextLine();
+         }
+         if (count > 1) {
+            totalMoney = sc2.nextInt();
+         }
+         // resets game if user has $0
+         if (totalMoney !=0) {
+            coinPurse.setText("<html>Life Savings:<br>$" + totalMoney);
+         }
+         else {
+            new FileWriter(kenoFile, false).close(); // deletes contents in kenoFile
+            pw.println("You got a loan of $500...");
+         }
+         sc.close();
+         sc2.close();
+         pw.close();
+      }
+      catch(IOException ioe) { JOptionPane.showMessageDialog(new JFrame( ),
+            "ERROR: Cannot print out to the file.",
+            "File Error",
+            JOptionPane.ERROR_MESSAGE);
+         try {
+            File kenoFile = new File("KenoFile.txt");
+            new FileWriter(kenoFile, false).close();
+         }
+         catch (IOException a) {
+         }
+      
+      }
+      catch(InputMismatchException ime) { JOptionPane.showMessageDialog(new JFrame( ),
+            "ERROR: File corrupted. Creating new save file.",
+            "File Error",
+            JOptionPane.ERROR_MESSAGE);
+         try {
+            File kenoFile = new File("KenoFile.txt");
+            new FileWriter(kenoFile, false).close();
+         }
+         catch (IOException a) {
+         }
+      }
+   
+      
+      
    
       JPanel main = new JPanel();
    	
-   	// What will show on the top side
+      // What will show on the top side
       JPanel north = new JPanel();
       north.setLayout(new BorderLayout());
       title.setFont(new Font("Verdana", Font.PLAIN, 30)); //title font (30 size)
       title.setHorizontalAlignment(SwingConstants.CENTER); //Centers title text
       north.add("Center",title); //adds title to the top center
    	
-   	//What will show on the bottom side
+      //What will show on the bottom side
       JPanel south = new JPanel();
       south.setBackground(Color.pink); //used to emphasize importance of bottom text
       south.add(bottomText);
       bottomText.setFont(new Font("Verdana", Font.PLAIN, 16)); //medium size font
    	
-   	//What will show on the left side
+      //What will show on the left side
       JPanel west = new JPanel();
       west.setLayout(new BorderLayout());
       JPanel NW = new JPanel();	//Used to group buttons on top left corner
@@ -138,7 +197,7 @@ public class EasyKeno extends JFrame {
       coinPurse.setFont(new Font("Verdana", Font.PLAIN, 16)); //medium size font
       west.add("Center", coinPurse); //adds coinPurse text middle left
    	
-   	//What will show on the right side
+      //What will show on the right side
       JPanel east = new JPanel();
       east.setLayout(new BorderLayout());
       spotsSelected.setFont(new Font("Verdana", Font.PLAIN, 16)); //medium size font
@@ -157,7 +216,7 @@ public class EasyKeno extends JFrame {
       SE.add(spotsSelected); //adds spotsSelected text to SE button group
       east.add("South", SE); //Groups confirmSquares button and spotsSelected text to bottom right
    	
-   	//What will show in the center
+      //What will show in the center
       JPanel center = new JPanel();
       center.setLayout(new GridLayout(4,10));
       
@@ -170,7 +229,7 @@ public class EasyKeno extends JFrame {
          center.add(KenoButtons[i]);
       }
    
-   	// adds all elements to the main window
+      // adds all elements to the main window
       main.setLayout(new BorderLayout());
       main.add("North", north);
       main.add("South", south);
@@ -179,29 +238,9 @@ public class EasyKeno extends JFrame {
       main.add("Center", (center)); //Calls on setKenoButtons and puts it in center
       this.add(main);
    	
-   	// help set up
+      // help set up
       initializeHelp();
-   	
-   	// loads up money save file (if file is empty, creates new save file)
-      File kenoFile = new File("KenoFile.txt");
-      Scanner sc = new Scanner(kenoFile);
-      try {
-         String s = sc.nextLine();
-         wins = Integer.parseInt(sc.nextLine());
-         sc.nextLine();
-         sc.nextLine();
-         losses = Integer.parseInt(sc.nextLine());
-         sc.nextLine();
-         sc.nextLine();
-         totalMoney = Integer.parseInt(sc.nextLine());
-      }
-      catch (NoSuchElementException NSEE){
-         wins = 0;
-         losses = 0;
-         totalMoney = 500;
-      }
-      coinPurse.setText("<html>Life Savings:<br>$" + totalMoney);
-   }
+   } 	
    
   /**
    * method that sets up the UI (user interface) for the help screen
@@ -258,27 +297,29 @@ public class EasyKeno extends JFrame {
    private String setInstructions(int n) {
       switch (n) {
          case 1:
-            s =   "<html>The goal of this game is to get as much money as possible! To do so,";
-            s = s + "<br>before the game begins, you must type how much you want to bet.<html>";
+            s =   "<html>The goal of this game is to get as much money as possible!";
+            s = s + "<br>To do so,you must click the \"start game \" button, then type how";
+            s = s + "<br> much you want to bet.<html>";
             helpInstructions.setText(s);
             return s;
          case 2:
             s =   "<html>Once the bets are complete, there will show 40 different squares which";
             s = s + "<br>can be picked.  Out of those, you can chose which spots you think will ";
-            s = s + "<br>be landed on.  You can choose 10 spots! <html>";
+            s = s + "<br>be landed on.  You must choose 10 spots! <html>";
             helpInstructions.setText(s);
             return s;
          case 3:
-            s =   "<html>Once you choose 10 spots, 10 spots are chosen at random.  The more spots ";
-            s = s + "<br>you choose that are landed on, the more you win!!!";
+            s =   "<html>Once you choose 10 spots and select the \"confirm squares\" button,";
+            s = s + "<br>10 spots are chosen at random.  The more spots you choose that";
+            s = s + "<br>are landed on, the more you win!!!";
             helpInstructions.setText(s);
             return s;
          case 4:
             s =   "<html> Yellow - Buttons that you have not selected";
             s = s + "<br> Blue - Buttons that you have selected";
             s = s + "<br>";
-            s = s + "<br> Green - Buttons that you have won!";
-            s = s + "<br> Red - Buttons that were selected by the computer...";
+            s = s + "<br> Green - Buttons that you have won! (Hits)";
+            s = s + "<br> Red - Buttons that were selected by the computer... (Misses)";
             return s;
          case 5:
             s =   "<html>The prizes are as follows";
@@ -310,22 +351,26 @@ public class EasyKeno extends JFrame {
       private ArrayList<Integer> picker = new ArrayList<Integer>(); // used to pick a random assortment of win buttons
       ArrayList<Integer> randomizer = new ArrayList<Integer>(); //used to pick a random assortment of buttons
    
+   
       public void actionPerformed(ActionEvent event) {
-       /*
-        *  These buttons starts the game.  If startGame is pressed, textField will appear on screen
-        *  prompting user to enter betAmt.  If the other one is pressed, the previous bet is used.
-        *  sameBet is only activated when the player has played at least once
-        */
+      
+      
+           
+          /*
+           *  These buttons starts the game.  If startGame is pressed, textField will appear on screen
+           *  prompting user to enter betAmt.  If the other one is pressed, the previous bet is used.
+           *  sameBet is only activated when the player has played at least once
+           */
          if (event.getSource()==startGame || event.getSource()==sameBet) {
             if (event.getSource()==startGame) {
                String a = JOptionPane.showInputDialog(startGame, "Please enter bet amount:", "Bet Amount", 3);
-            
+               
                try {
-                 //if the user doesn't type in anything and accepts, nothing happens
+                	 //if the user doesn't type in anything and accepts, nothing happens
                   if (a.equals("")) {
                      return;
                   }
-                  //if the user types the secret passcode, cheats are enabled
+                     //if the user types the secret passcode, cheats are enabled
                   else if (a.equals(SECRET_PASSCODE)) {
                      devDoor = true;
                      a = JOptionPane.showInputDialog(startGame, "DEV EXIT: ENTER BET AMT");
@@ -333,132 +378,156 @@ public class EasyKeno extends JFrame {
                   else {
                      devDoor = false;
                   }
-               	  // if betAmt > total money you own, error is thrown
+                  	  // if betAmt > total money you own, error is thrown
                   if (Integer.parseInt(a) > totalMoney) {
                      EasyKenoException me = new EasyKenoException();
                      throw me;
                   }
                   bet = Integer.parseInt(a);
                }
-               catch (EasyKenoException EKE) {
-                  JOptionPane.showMessageDialog(startGame, "Please don't go into debt (>"+totalMoney+")", "ERROR", JOptionPane.WARNING_MESSAGE);
+               catch (EasyKenoException EKE) { JOptionPane.showMessageDialog(startGame, 
+                      "Please don't go into debt (>"+totalMoney+")", 
+                      "ERROR", 
+                      JOptionPane.WARNING_MESSAGE);
                   return;
                }
-               catch (NumberFormatException NFE) {
-                  JOptionPane.showMessageDialog(startGame, "Please enter a valid dollar amount (no , or $ or .)", "ERROR", JOptionPane.WARNING_MESSAGE);
+               catch (NumberFormatException NFE) { JOptionPane.showMessageDialog(startGame, 
+                      "Please enter a valid dollar amount (no , or $ or .)", 
+                      "ERROR", 
+                      JOptionPane.WARNING_MESSAGE);
                   return;
                }
                catch (NullPointerException NPE) {
                   return;
                }
             }
-            //turns off both start buttons and turns on randomPick button (chooses 10 keno buttons for you)
+               //turns off both start buttons and turns on randomPick button (chooses 10 keno buttons for you)
             startGame.setEnabled(false);
             sameBet.setEnabled(false);
             randomPick.setEnabled(true);
-            
-            //subtracts bet amount and updates text
+               
+               //subtracts bet amount and updates text
             totalMoney = totalMoney-bet;
             coinPurse.setText("<html>Life Savings:<br>$" + totalMoney);
             betAmt.setText("<html>Bet<br>amount:<br>$" + bet);
             bottomText.setText("Now, click 10 different squares!");
-            
-            //resets buttons and turns them clickable (blue when clicked on)
+               
+               //resets buttons and turns them clickable (blue when clicked on)
             for (int i=0;i<40;i++) {
                KenoButtons[i].setBackground(Color.yellow);
                spots=0;
                spotsSelected.setText("<html>" +spots+"<br>Spots<br>Selected");
                KenoButtons[i].setEnabled(true);
             }
-            
-            //chooses the random winners now and shows them as orange (for cheaters)
+               
+               //chooses the random winners now and shows them as orange (for cheaters)
             if (devDoor == true) {
                for (int i=0;i<40;i++) {
                   picker.add(i);
                }
                Collections.shuffle(picker);
-            	
+               	
                for (int i=0;i<10;i++) {
                   KenoButtons[picker.get(i)].setBackground(Color.orange);
                }
             }
          }
-         
-         /*
-          * This button only activates when 10 keno buttons are blue (pressed).  If cheats are disabled,
-          * it choses 10 buttons at random and everything is calculated to end the game.
-          */
+            
+            /*
+             * This button only activates when 10 keno buttons are blue (pressed).  If cheats are disabled,
+             * it choses 10 buttons at random and everything is calculated to end the game.  Results are
+             * saved in KenoFile.txt
+             */
          else if (event.getSource()==confirmSquares) {
-         
-         // chooses 10 random keno squares if cheats are disabled (10 already picked if enabled)
-            if (devDoor == false) {
-               for (int i=0;i<40;i++) {
-                  picker.add(i);
-
-               }
-               Collections.shuffle(picker);
-            }
-            // this code shows which tiles won (green) and which ones lost (red)
-            for (int i=0;i<10;i++) {
-               if(KenoButtons[picker.get(i)].getBackground() == Color.yellow ||
-               		KenoButtons[picker.get(i)].getBackground() == Color.orange) {
-                  KenoButtons[picker.get(i)].setBackground(Color.red);
-               }
-               else {
-                  KenoButtons[picker.get(i)].setBackground(Color.green);
-                  hitCounter++;
-               }
-            }
-            // sets keno buttons false
-            for (int i=0;i<40;i++) {
-               KenoButtons[i].setEnabled(false);
-            }
-         
-            picker.clear(); // clears the array list to be used again (very important)
-         	
-            payout(); // calculates the total amount as well as shows win/loss message at bottom
-            
-            //saves result into file (if previous result is there, overrides it to show newest w/l record and total money)
             try {
-               saveIntoFile();
-            } 
-            catch (IOException e) {
-               e.printStackTrace();
-            }
+               File kenoFile = new File("KenoFile.txt");
+               PrintWriter pw = new PrintWriter(new FileWriter(kenoFile, true));
+               pw.print("\nUser selected the following numbers: ");
+               for (int i=0;i<40;i++) {                  
+                  if(KenoButtons[i].getBackground() == Color.blue ||
+                    			KenoButtons[i].getBackground() == Color.cyan) {
+                     pw.print(i+1 + " ");
+                  }
+               }
+               pw.println("");
             
-            //resets game state back to the beginning
-            hitCounter = 0;
-            coinPurse.setText("<html>Life Savings:<br>$" + totalMoney);
-            confirmSquares.setEnabled(false);
-            randomPick.setEnabled(false);
-            //Game over if you have $0 to bet (can't play again)
-            if (totalMoney!=0) {
-               startGame.setEnabled(true);
-               startGame.setText("New Bet");
-               sameBet.setEnabled(true);
+                    // chooses 10 random keno squares if cheats are disabled (10 already picked if enabled)
+               if (devDoor == false) {
+                  for (int i=0;i<40;i++) {
+                     picker.add(i);
+                  }
+               
+                  Collections.shuffle(picker);
+               }
+                    // this code shows which tiles won (green) and which ones lost (red)
+               for (int i=0;i<10;i++) {
+                  if(KenoButtons[picker.get(i)].getBackground() == Color.yellow ||
+                    			KenoButtons[picker.get(i)].getBackground() == Color.orange) {
+                     KenoButtons[picker.get(i)].setBackground(Color.red);
+                  }
+                  else {
+                     KenoButtons[picker.get(i)].setBackground(Color.green);
+                     hitCounter++;
+                  }
+               }
+                    // sets keno buttons false
+               pw.print("User matched the folllowing numbers: ");
+               for (int i=0;i<40;i++) {
+               
+                  if (KenoButtons[i].getBackground() == Color.green) {
+                     pw.print(i+1 + " ");
+                  }
+                  KenoButtons[i].setEnabled(false);
+               }
+               pw.println("(total of "+hitCounter+" hit(s)!)");
+               
+            
+            
+               picker.clear(); // clears the array list to be used again (very important)
+            	
+               payout(pw); // calculates the total amount as well as shows win/loss message at bottom
+               pw.close(); 
+               
+               
+               //resets game state back to the beginning
+               hitCounter = 0;
+               coinPurse.setText("<html>Life Savings:<br>$" + totalMoney);
+               confirmSquares.setEnabled(false);
+               randomPick.setEnabled(false);
+               //Game over if you have $0 to bet (can't play again)
+               if (totalMoney!=0) {
+                  startGame.setEnabled(true);
+                  startGame.setText("New Bet");
+                  sameBet.setEnabled(true);
+               }
             }
-         
+            catch(IOException ioe){
+               JOptionPane.showMessageDialog(new JFrame( ),
+                                         "ERROR: Cannot print out to the file.",
+                                         "File Error",
+                                         JOptionPane.ERROR_MESSAGE);      
+            }
          }
-         /*
-          * This button picks a random assortment of 10 keno buttons to be played (for convinience)
-          */
+            /*
+             * This button picks a random assortment of 10 keno buttons to be played (for convinience)
+             */
          else if (event.getSource()==randomPick) {
             spots = 0;// resets spot counter
-            //sets everything to yellow and chooses random buttons
+               //sets everything to yellow and chooses random buttons
             for (int i=0;i<40;i++) {
                KenoButtons[i].setBackground(Color.yellow);
                randomizer.add(i);
             }
             Collections.shuffle(randomizer);
-         	
-            //if cheating, sets right colors to orange
+            	
+               //if cheating, sets right colors to orange
             for (int i=0;i<10;i++) {
                if (devDoor==true) {
                   KenoButtons[picker.get(i)].setBackground(Color.orange);
                }
             }
-         
-            //sets random array list numbers to match up with keno square colors
+            
+               //sets random array list numbers to match up with keno square colors
             for (int i=0;i<10;i++) {
                if (KenoButtons[randomizer.get(i)].getBackground() == Color.orange) {
                   KenoButtons[randomizer.get(i)].setBackground(Color.cyan);
@@ -466,75 +535,75 @@ public class EasyKeno extends JFrame {
                else {	
                   KenoButtons[randomizer.get(i)].setBackground(Color.blue);
                }
-            	
+               	
             }
             spots=10;
             spotsSelected.setText("<html>" +spots+"<br>Spots<br>Selected");
             confirmSquares.setEnabled(true);
             randomizer.clear();
          }
-         
-         /*
-          * sets up button when pressed, the rule window pops up
-          */
+            
+            /*
+             * sets up button when pressed, the rule window pops up
+             */
          else if (event.getSource()==rules) {
             helpScreen.setVisible(true);
             helpScreen.setLocation(50, 50);
          }
-         
-         /*
-          * this prompts the user if they wish to exit the game and does so if they confirm
-          */
+            
+            /*
+             * this prompts the user if they wish to exit the game and does so if they confirm
+             */
          else if (event.getSource()==exit) {
             int a = JOptionPane.showConfirmDialog(exit, "Do you wish to exit? (All work is saved under KenoFile.txt)", "exit?", 0);
             if (a == 0) {
                System.exit(0);
             }
          }
-         
-         /*
-          * Sets the button to go to the next help page (stops at pg 6)
-          */
+            
+            /*
+             * Sets the button to go to the next help page (stops at pg 6)
+             */
          else if (event.getSource()==helpNext) {
             if (helpPageNum>=1 && helpPageNum<=6) {
                helpPageNum++;
                helpPageNumL.setText(Integer.toString(helpPageNum));
                helpInstructions.setText(setInstructions(helpPageNum));
                helpPrevious.setEnabled(true);
-            
+               
                if (helpPageNum==6) {
                   helpNext.setEnabled(false);
                }
             }
          }
-         
-         /*
-          * Sets the button to go to the previous help page (can't go before 1st page)
-          */
+            
+            /*
+             * Sets the button to go to the previous help page (can't go before 1st page)
+             */
          else if (event.getSource()==helpPrevious) {
             if (helpPageNum>1 && helpPageNum<=6) {
                helpPageNum--;
                helpPageNumL.setText(Integer.toString(helpPageNum));
                helpInstructions.setText(setInstructions(helpPageNum));
                helpNext.setEnabled(true);
-            
+               
                if (helpPageNum==1) {
                   helpPrevious.setEnabled(false);
                }
             }
          }
-         
-         /*
-          * closes help screen when pressed
-          */
+            
+            /*
+             * closes help screen when pressed
+             */
          else if (event.getSource()==helpLetsPlay) {
             helpScreen.setVisible(false);
          }
-         
-         /*
-          * Sets up button presses to change to blue when yellow vice versa.  Also makes it so that
-          * only 10 blue buttons can be there at a time.
-          */
+            
+            /*
+             * Sets up button presses to change to blue when yellow vice versa.  Also makes it so that
+             * only 10 blue buttons can be there at a time.
+             */
          else {
             for (int i=0;i<40;i++) {
                if (event.getSource()==KenoButtons[i]) {
@@ -548,7 +617,7 @@ public class EasyKeno extends JFrame {
                         spotsSelected.setText("<html>" +spots+"<br>Spots<br>Selected");
                      }
                   }
-                  // orange and cyan are dev cheats
+                     // orange and cyan are dev cheats
                   else if (KenoButtons[i].getBackground() == Color.orange) {
                      if (spots==9) {
                         confirmSquares.setEnabled(true);
@@ -565,7 +634,7 @@ public class EasyKeno extends JFrame {
                      spots--;
                      spotsSelected.setText("<html>" +spots+"<br>Spots<br>Selected");
                   }
-                  
+                     
                   else {
                      KenoButtons[i].setBackground(Color.yellow);
                      confirmSquares.setEnabled(false);
@@ -575,10 +644,9 @@ public class EasyKeno extends JFrame {
                }
             }
          }
-      
-      
-      }
+      }      
    }
+
 	
   /**
    * method that calculate payout and tells user how much they won
@@ -586,84 +654,62 @@ public class EasyKeno extends JFrame {
    * @exception Any exception
    * @return No return value
    */
-   private void payout() {
+   private void payout(PrintWriter pw) {
       switch (hitCounter) {
          case 0:
             totalMoney = totalMoney+(bet*2);
             bottomText.setText("Win! 2x (No Matches)");
-            wins++;
+            pw.print("The user won $" + bet + "!");
             break;
          case 3:
             totalMoney = totalMoney+bet;
             bottomText.setText("Broke Even (3 Matches)");
+            pw.print("The user broke even.");
             break;
          case 4:
             totalMoney = totalMoney+(bet*2);
             bottomText.setText("Win! 2x (4 Matches)");
-            wins++;
+            pw.print("The user won $" + bet + "!");
             break;
          case 5:
             totalMoney = totalMoney+(bet*3);
             bottomText.setText("Win! 3x (5 Matches)");
-            wins++;
+            pw.print("The user won $" + bet*2 + "!");
             break;
          case 6:
             totalMoney = totalMoney+(bet*7);
             bottomText.setText("Win! 7x (6 Matches)");
-            wins++;
+            pw.print("The user won $" + bet*6 + "!");
             break;
          case 7:
             totalMoney = totalMoney+(bet*30);
             bottomText.setText("Win! 30x (7 Matches)");
-            wins++;
+            pw.print("The user won $" + bet*29 + "!");
             break;
          case 8:
             totalMoney = totalMoney+(bet*200);
             bottomText.setText("Win! 200x (8 Matches)");
-            wins++;
+            pw.print("The user won $" + bet*199 + "!");
             break;
          case 9:
             totalMoney = totalMoney+(bet*1000);
             bottomText.setText("Win! 1000x (9 Matches)");
-            wins++;
+            pw.print("The user won $" + bet*999 + "!");
             break;
          case 10:
             totalMoney = totalMoney+(bet*10000);
             bottomText.setText("Win! 10,000x (10 Matches) CONGRATULATIONS!!!");
-            wins++;
-            break;
+            pw.print("The user won $" + bet*9999 + "!");
          default:
             bottomText.setText("Nice Try");
-            losses++;
+            pw.print("The user lost $" + bet + "!");
             break;
       }
-   }
-   
-  /**
-   * method that calculate payout and tells user how much they won
-   * @param No parameters.
-   * @exception Any exception
-   * @return No return vlue
-   */
-   private void saveIntoFile() throws IOException {
-     // sets up file to be outputted
-      File kenoFile = new File("KenoFile.txt");
-      FileWriter fw = new FileWriter(kenoFile);
-      PrintWriter pw = new PrintWriter(fw);
-   	  
-      // prints to keno file amt of wins and losses
-      pw.println("User has won this many time(s)!" );
-      pw.println(wins+"\n");
-      pw.println("User has loss this many time(s)!");
-      pw.println(losses+"\n");
-      
-      // prints to keno file the total amt of money the user has
-      pw.println("Total user money:");
+      if (devDoor == true) pw.print(" (with the help of cheats...)");
+      pw.println("\n\nNew Total:");
       pw.println(totalMoney);
-      
-      // closes files
-      pw.close();
-      fw.close();
-   	
+      pw.println("--------------------------");
    }
+
+
 }
