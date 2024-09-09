@@ -1,0 +1,8 @@
+User has won this many time(s)!
+0
+
+User has loss this many time(s)!
+3
+
+Total user money:
+290
